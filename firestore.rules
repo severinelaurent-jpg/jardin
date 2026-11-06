@@ -1,0 +1,177 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common security primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // --- Entity Validators ---
+
+    function isValidPlot(data) {
+      return data.keys().hasAll(['id', 'userId', 'name', 'sunExposure', 'soilType', 'createdAt'])
+        && data.keys().hasOnly(['id', 'userId', 'name', 'description', 'sunExposure', 'soilType', 'areaM2', 'color', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId == request.auth.uid
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && (!('description' in data) || (data.description is string && data.description.size() <= 500))
+        && data.sunExposure in ['full_sun', 'partial_shade', 'full_shade']
+        && data.soilType in ['clay', 'sandy', 'loamy', 'chalky', 'potting']
+        && (!('areaM2' in data) || data.areaM2 is number)
+        && (!('color' in data) || (data.color is string && data.color.size() <= 30))
+        && data.createdAt is string && data.createdAt.size() <= 64
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidPlant(data) {
+      return data.keys().hasAll(['id', 'userId', 'plotId', 'name', 'category', 'status', 'createdAt'])
+        && data.keys().hasOnly(['id', 'userId', 'plotId', 'name', 'variety', 'category', 'status', 'sowingDate', 'plantingDate', 'estimatedHarvestDate', 'wateringFrequencyDays', 'lastWateredDate', 'quantity', 'notes', 'companionGood', 'companionBad', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId == request.auth.uid
+        && data.plotId is string && data.plotId.size() <= 128
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && (!('variety' in data) || (data.variety is string && data.variety.size() <= 100))
+        && data.category in ['vegetable', 'fruit', 'herb', 'flower', 'legume', 'other']
+        && data.status in ['planned', 'sown', 'growing', 'harvesting', 'finished']
+        && (!('sowingDate' in data) || (data.sowingDate is string && data.sowingDate.size() <= 30))
+        && (!('plantingDate' in data) || (data.plantingDate is string && data.plantingDate.size() <= 30))
+        && (!('estimatedHarvestDate' in data) || (data.estimatedHarvestDate is string && data.estimatedHarvestDate.size() <= 30))
+        && (!('wateringFrequencyDays' in data) || data.wateringFrequencyDays is number)
+        && (!('lastWateredDate' in data) || (data.lastWateredDate is string && data.lastWateredDate.size() <= 30))
+        && (!('quantity' in data) || data.quantity is number)
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000))
+        && (!('companionGood' in data) || (data.companionGood is string && data.companionGood.size() <= 200))
+        && (!('companionBad' in data) || (data.companionBad is string && data.companionBad.size() <= 200))
+        && data.createdAt is string && data.createdAt.size() <= 64
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidTask(data) {
+      return data.keys().hasAll(['id', 'userId', 'title', 'type', 'dueDate', 'completed', 'createdAt'])
+        && data.keys().hasOnly(['id', 'userId', 'plantId', 'plotId', 'title', 'type', 'dueDate', 'completed', 'completedAt', 'notes', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId == request.auth.uid
+        && (!('plantId' in data) || (data.plantId is string && data.plantId.size() <= 128))
+        && (!('plotId' in data) || (data.plotId is string && data.plotId.size() <= 128))
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 150
+        && data.type in ['watering', 'fertilizing', 'pruning', 'weeding', 'pest_control', 'sowing', 'harvesting', 'other']
+        && data.dueDate is string && data.dueDate.size() <= 30
+        && data.completed is bool
+        && (!('completedAt' in data) || (data.completedAt is string && data.completedAt.size() <= 64))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 500))
+        && data.createdAt is string && data.createdAt.size() <= 64
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidHarvest(data) {
+      return data.keys().hasAll(['id', 'userId', 'plantName', 'harvestDate', 'quantity', 'unit', 'createdAt'])
+        && data.keys().hasOnly(['id', 'userId', 'plantId', 'plantName', 'plotName', 'harvestDate', 'quantity', 'unit', 'quality', 'notes', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId == request.auth.uid
+        && (!('plantId' in data) || (data.plantId is string && data.plantId.size() <= 128))
+        && data.plantName is string && data.plantName.size() > 0 && data.plantName.size() <= 100
+        && (!('plotName' in data) || (data.plotName is string && data.plotName.size() <= 100))
+        && data.harvestDate is string && data.harvestDate.size() <= 30
+        && data.quantity is number
+        && data.unit in ['kg', 'g', 'units', 'bunches']
+        && (!('quality' in data) || data.quality in ['excellent', 'good', 'average', 'poor'])
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 500))
+        && data.createdAt is string && data.createdAt.size() <= 64
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidJournal(data) {
+      return data.keys().hasAll(['id', 'userId', 'date', 'title', 'content', 'createdAt'])
+        && data.keys().hasOnly(['id', 'userId', 'date', 'title', 'content', 'weather', 'temperature', 'tags', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId == request.auth.uid
+        && data.date is string && data.date.size() <= 30
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 150
+        && data.content is string && data.content.size() <= 2000
+        && (!('weather' in data) || data.weather in ['sunny', 'rainy', 'cloudy', 'stormy', 'windy', 'frost'])
+        && (!('temperature' in data) || data.temperature is number)
+        && (!('tags' in data) || (data.tags is string && data.tags.size() <= 200))
+        && data.createdAt is string && data.createdAt.size() <= 64
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    // --- Collections & Paths ---
+
+    match /plots/{plotId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(plotId) && isValidPlot(incoming());
+      allow update: if isSignedIn() && isValidId(plotId) && isValidPlot(incoming())
+        && incoming().userId == existing().userId
+        && incoming().id == existing().id;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /plants/{plantId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(plantId) && isValidPlant(incoming());
+      allow update: if isSignedIn() && isValidId(plantId) && isValidPlant(incoming())
+        && incoming().userId == existing().userId
+        && incoming().id == existing().id;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /tasks/{taskId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(taskId) && isValidTask(incoming());
+      allow update: if isSignedIn() && isValidId(taskId) && isValidTask(incoming())
+        && incoming().userId == existing().userId
+        && incoming().id == existing().id;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /harvests/{harvestId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(harvestId) && isValidHarvest(incoming());
+      allow update: if isSignedIn() && isValidId(harvestId) && isValidHarvest(incoming())
+        && incoming().userId == existing().userId
+        && incoming().id == existing().id;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /journal/{journalId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(journalId) && isValidJournal(incoming());
+      allow update: if isSignedIn() && isValidId(journalId) && isValidJournal(incoming())
+        && incoming().userId == existing().userId
+        && incoming().id == existing().id;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // Health check test connection path
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}

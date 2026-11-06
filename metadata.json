@@ -1,0 +1,7 @@
+{
+  "name": "Mon Jardinier - Suivi de Jardin",
+  "description": "Application complète de gestion et suivi de jardin et potager : parcelles, cultures, calendrier des semis, arrosages et récoltes avec synchronisation Firebase.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

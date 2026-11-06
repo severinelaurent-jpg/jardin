@@ -1,0 +1,128 @@
+{
+  "entities": {
+    "Plot": {
+      "title": "Plot",
+      "description": "A garden parcel, raised bed, or greenhouse sector",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 500 },
+        "sunExposure": { "type": "string", "enum": ["full_sun", "partial_shade", "full_shade"] },
+        "soilType": { "type": "string", "enum": ["clay", "sandy", "loamy", "chalky", "potting"] },
+        "areaM2": { "type": "number" },
+        "color": { "type": "string", "maxLength": 30 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "userId", "name", "sunExposure", "soilType", "createdAt"]
+    },
+    "Plant": {
+      "title": "Plant",
+      "description": "A vegetable, fruit, herb or flower planted or planned in a plot",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "plotId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "variety": { "type": "string", "maxLength": 100 },
+        "category": { "type": "string", "enum": ["vegetable", "fruit", "herb", "flower", "legume", "other"] },
+        "status": { "type": "string", "enum": ["planned", "sown", "growing", "harvesting", "finished"] },
+        "sowingDate": { "type": "string", "maxLength": 30 },
+        "plantingDate": { "type": "string", "maxLength": 30 },
+        "estimatedHarvestDate": { "type": "string", "maxLength": 30 },
+        "wateringFrequencyDays": { "type": "number" },
+        "lastWateredDate": { "type": "string", "maxLength": 30 },
+        "quantity": { "type": "number" },
+        "notes": { "type": "string", "maxLength": 1000 },
+        "companionGood": { "type": "string", "maxLength": 200 },
+        "companionBad": { "type": "string", "maxLength": 200 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "userId", "plotId", "name", "category", "status", "createdAt"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Garden maintenance chore or reminder (watering, weeding, pruning, etc.)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "plantId": { "type": "string", "maxLength": 128 },
+        "plotId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 150 },
+        "type": { "type": "string", "enum": ["watering", "fertilizing", "pruning", "weeding", "pest_control", "sowing", "harvesting", "other"] },
+        "dueDate": { "type": "string", "maxLength": 30 },
+        "completed": { "type": "boolean" },
+        "completedAt": { "type": "string", "maxLength": 64 },
+        "notes": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "userId", "title", "type", "dueDate", "completed", "createdAt"]
+    },
+    "Harvest": {
+      "title": "Harvest",
+      "description": "Logged harvest yield with quantities, quality ratings and dates",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "plantId": { "type": "string", "maxLength": 128 },
+        "plantName": { "type": "string", "maxLength": 100 },
+        "plotName": { "type": "string", "maxLength": 100 },
+        "harvestDate": { "type": "string", "maxLength": 30 },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string", "enum": ["kg", "g", "units", "bunches"] },
+        "quality": { "type": "string", "enum": ["excellent", "good", "average", "poor"] },
+        "notes": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "userId", "plantName", "harvestDate", "quantity", "unit", "createdAt"]
+    },
+    "JournalEntry": {
+      "title": "JournalEntry",
+      "description": "Gardener logbook note with weather observation and garden state",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "maxLength": 30 },
+        "title": { "type": "string", "maxLength": 150 },
+        "content": { "type": "string", "maxLength": 2000 },
+        "weather": { "type": "string", "enum": ["sunny", "rainy", "cloudy", "stormy", "windy", "frost"] },
+        "temperature": { "type": "number" },
+        "tags": { "type": "string", "maxLength": 200 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "userId", "date", "title", "content", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/plots/{plotId}": {
+      "schema": "Plot",
+      "description": "Collection of garden plots per user"
+    },
+    "/plants/{plantId}": {
+      "schema": "Plant",
+      "description": "Collection of planted crops per user"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Collection of gardening chores and care reminders per user"
+    },
+    "/harvests/{harvestId}": {
+      "schema": "Harvest",
+      "description": "Collection of recorded harvests per user"
+    },
+    "/journal/{journalId}": {
+      "schema": "JournalEntry",
+      "description": "Collection of journal notes and garden observations per user"
+    }
+  }
+}
